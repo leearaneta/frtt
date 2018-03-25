@@ -20,7 +20,7 @@ export default {
   methods: {
     ...mapActions(['submitURL']),
     handleClick: function (event) {
-      this.$store.dispatch('submitURL', this.search)
+      this.submitURL(this.search)
       this.search = ''
     }
   }

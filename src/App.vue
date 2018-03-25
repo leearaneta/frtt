@@ -1,16 +1,19 @@
 <template>
   <div id="app">
     <SearchContainer />
+    <RecipeNamesContainer />
   </div>
 </template>
 
 <script>
 import SearchContainer from './components/SearchContainer.vue'
+import RecipeNamesContainer from './components/RecipeNamesContainer.vue'
 
 export default {
   name: 'App',
   components: {
-    SearchContainer
+    SearchContainer,
+    RecipeNamesContainer
   }
 }
 </script>

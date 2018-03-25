@@ -23,14 +23,14 @@ function merge (ingredients) { // this needs to be way better
 }
 
 const state = {
-  validatedRecipes: [],
+  recipes: [],
   error: ''
 }
 
 const getters = {
-  names: state => state.validatedRecipes.map(x => x.name),
+  recipeNames: state => state.recipes.map(x => x.name),
   ingredientList: state => {
-    _.chain(state.validatedRecipes)
+    return _.chain(state.recipes)
       .flatMap('ingredients')
       .groupBy('name')
       .values()
@@ -40,12 +40,11 @@ const getters = {
 }
 
 const mutations = {
-  pushToValidatedRecipes (state, recipe) {
-    state.validatedRecipes.push(recipe)
+  pushToRecipes (state, recipe) {
+    state.recipes.push(recipe)
   },
-  removeValidatedRecipe (state, url) {
-    let index = state.validatedRecipes.map(x => x.url).indexOf(url)
-    state.validatedRecipes.splice(index, 1)
+  removeRecipe (state, index) {
+    state.recipes.splice(index, 1)
   },
   setError (state, error) {
     state.error = error
@@ -64,7 +63,7 @@ const actions = {
       }
     })
     myAxios.post('/parse', {'name': url})
-      .then(response => commit('pushToValidatedRecipes', response.data))
+      .then(response => commit('pushToRecipes', response.data))
       .catch(error => commit('setError', error))
   }
 }
