@@ -28,7 +28,7 @@ const state = {
 }
 
 const getters = {
-  urls: state => state.validatedRecipes.map(x => x.url),
+  names: state => state.validatedRecipes.map(x => x.name),
   ingredientList: state => {
     _.chain(state.validatedRecipes)
       .flatMap('ingredients')
@@ -64,14 +64,8 @@ const actions = {
       }
     })
     myAxios.post('/parse', {'name': url})
-      .then(response => {
-        debugger
-        let validatedRecipe = {url, ingredients: response.data}
-        commit('pushToValidatedRecipes', validatedRecipe)
-      })
-      .catch(error => {
-        commit('setError', error)
-      })
+      .then(response => commit('pushToValidatedRecipes', response.data))
+      .catch(error => commit('setError', error))
   }
 }
 

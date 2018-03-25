@@ -13,7 +13,7 @@ export default {
     return { search: '' }
   },
   watch: {
-    url: function (a, b) {
+    search: function (a, b) {
       this.search = a
     }
   },
