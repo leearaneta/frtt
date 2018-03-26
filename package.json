@@ -13,6 +13,7 @@
   "dependencies": {
     "axios": "^0.18.0",
     "convert-units": "^2.3.4",
+    "element-ui": "^2.2.2",
     "fraction.js": "^4.0.4",
     "lodash": "^4.17.5",
     "vue": "^2.5.2",

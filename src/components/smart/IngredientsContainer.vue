@@ -3,6 +3,7 @@
     <Ingredient
       v-for="(ingredient, index) in ingredientsList"
       v-bind:name="ingredient.name"
+      v-bind:splits="ingredients.splits"
       v-bind:unit="ingredient.unit"
       v-bind:qty="ingredient.qty"
       v-bind:key="index"

@@ -8,7 +8,7 @@
 
 export default {
   name: 'Ingredient',
-  props: ['name', 'unit', 'qty', 'index']
+  props: ['name', 'unit', 'qty', 'index', 'splits']
 }
 </script>
 

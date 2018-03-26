@@ -10,27 +10,30 @@ function qtyReduce (ingredients) {
     .toString()
 }
 
-function merge (ingredients) { // this needs to be way better
+function merge (ingredients) { // wow, what a humungo functo
   let {name, unit: arbitraryUnit} = _.sample(ingredients)
-
+  let splits = ingredients.map(i => _.omit(i, 'name'))
   // if any entries have no quantity, aggregate should have no quantity
-  if (!ingredients.map(x => x.qty).reduce((a, b) => a && b)) return {name}
+  if (!ingredients.map(x => x.qty).reduce((a, b) => a && b)) return {name, splits}
   // if any entries are unitless, aggregate should have no unit
-  if (!ingredients.map(x => x.unit).reduce((a, b) => a && b)) return {name, qty: qtyReduce(ingredients)}
+  if (!ingredients.map(x => x.unit).reduce((a, b) => a && b)) return {name, splits, qty: qtyReduce(ingredients)}
   // if all units are the same, don't convert
-  if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) return {name, unit: arbitraryUnit, qty: qtyReduce(ingredients)}
+  if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) return {name, splits, unit: arbitraryUnit, qty: qtyReduce(ingredients)}
 
-  let standardizedIngredients = ingredients.map(x => {
-    return {
-      ...x,
-      unit: arbitraryUnit,
-      qty: convert(x.qty).from(x.unit).to(arbitraryUnit)
-    }
-  })
-
-  let unitSum = qtyReduce(standardizedIngredients)
-  let [qty, unit] = convert(unitSum).from(arbitraryUnit).toBest().split(' ')
-  return {name, unit, qty}
+  try { // might fail because of conversion errors
+    let standardizedIngredients = splits.map(x => {
+      return {
+        ...x,
+        unit: arbitraryUnit,
+        qty: convert(x.qty).from(x.unit).to(arbitraryUnit)
+      }
+    })
+    let unitSum = qtyReduce(standardizedIngredients)
+    let [qty, unit] = convert(unitSum).from(arbitraryUnit).toBest().split(' ')
+    return {name, splits, unit, qty}
+  } catch (error) {
+    return {name, splits} // maybe set this to active:true
+  }
 }
 
 const state = {
@@ -42,7 +45,11 @@ const getters = {
   recipeNames: state => state.recipes.map(x => x.name),
   ingredientsList: state => {
     return _.chain(state.recipes)
-      .flatMap('ingredients')
+      .flatMap(recipe => { // omg
+        return recipe.ingredients.map(i => {
+          return { ...i, recipe: recipe.name }
+        })
+      })
       .groupBy('name')
       .values()
       .map(merge)
@@ -73,7 +80,7 @@ const actions = {
         'Content-Type': 'application/json'
       }
     })
-    myAxios.post('/parse', {'name': url}) // convert quantities to float here
+    myAxios.post('/parse', {'name': url})
       .then(response => {
         commit('pushToRecipes', response.data)
       })
