@@ -1,7 +1,11 @@
 <template>
   <div>
-    <input v-model="search" placeholder='butts haha'>
-    <button v-on:click="handleClick">hey</button>
+    <el-input
+      placeholder="Enter a Recipe URL !!"
+      v-model="search"
+      clearable
+    />
+    <el-button type="primary" v-on:click="handleClick">Huzzah</el-button>
   </div>
 </template>
 

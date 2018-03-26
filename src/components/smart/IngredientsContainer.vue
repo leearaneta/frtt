@@ -1,14 +1,14 @@
 <template>
-  <ul>
+  <el-collapse v-model="activeNames">
     <Ingredient
       v-for="(ingredient, index) in ingredientsList"
       v-bind:name="ingredient.name"
-      v-bind:splits="ingredients.splits"
+      v-bind:splits="ingredient.splits"
       v-bind:unit="ingredient.unit"
       v-bind:qty="ingredient.qty"
       v-bind:key="index"
     />
-  </ul>
+  </el-collapse>
 </template>
 
 <script>
@@ -18,12 +18,14 @@ import Ingredient from '../dumb/Ingredient'
 export default {
   name: 'IngredientsContainer',
   computed: { ...mapGetters(['ingredientsList']) },
-  components: { Ingredient }
+  components: { Ingredient },
+  data: function () {
+    return {
+      activeNames: []
+    }
+  }
 }
 </script>
 
 <style scoped>
-ul {
-  list-style-type: none
-}
 </style>

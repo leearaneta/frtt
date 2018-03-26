@@ -1,10 +1,13 @@
 <template>
   <li>
-    <div>{{name}}
-      <button
+    <div>
+      {{name}}
+      <el-button
+        icon="el-icon-delete"
+        size="mini"
         v-bind:index='index'
         v-on:click='handleRemove'
-      >remove</button>
+      />
     </div>
   </li>
 </template>
