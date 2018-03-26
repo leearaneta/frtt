@@ -7,6 +7,7 @@
 
 <script>
 import { mapActions } from 'vuex'
+
 export default {
   name: 'SearchContainer',
   data: function () {

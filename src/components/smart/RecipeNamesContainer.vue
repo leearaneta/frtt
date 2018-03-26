@@ -11,23 +11,23 @@
 
 <script>
 import { mapMutations, mapGetters } from 'vuex'
-import RecipeName from './RecipeName'
+import RecipeName from '../dumb/RecipeName'
+
 export default {
   name: 'RecipeNamesContainer',
-  computed: {
-    ...mapGetters(['recipeNames'])
-  },
+  computed: { ...mapGetters(['recipeNames']) },
   methods: {
     ...mapMutations(['removeRecipe']),
     handleRemove: function (event) {
       this.removeRecipe(event.target.index)
     }
   },
-  components: {
-    RecipeName
-  }
+  components: { RecipeName }
 }
 </script>
 
 <style scoped>
+ul {
+  list-style-type: none
+}
 </style>

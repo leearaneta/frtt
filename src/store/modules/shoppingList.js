@@ -1,6 +1,14 @@
 import _ from 'lodash'
 import convert from 'convert-units'
 import axios from 'axios'
+import Fraction from 'fraction.js'
+
+function qtyReduce (ingredients) {
+  return ingredients
+    .map(i => i.qty)
+    .reduce((a, b) => a.add(new Fraction(b)), new Fraction('0'))
+    .toString()
+}
 
 function merge (ingredients) { // this needs to be way better
   let {name, unit: arbitraryUnit} = _.sample(ingredients)
@@ -8,16 +16,19 @@ function merge (ingredients) { // this needs to be way better
   // if any entries have no quantity, aggregate should have no quantity
   if (!ingredients.map(x => x.qty).reduce((a, b) => a && b)) return {name}
   // if any entries are unitless, aggregate should have no unit
-  if (!ingredients.map(x => x.unit).reduce((a, b) => a && b)) return {name, qty: _.sumBy(ingredients, 'qty')}
+  if (!ingredients.map(x => x.unit).reduce((a, b) => a && b)) return {name, qty: qtyReduce(ingredients)}
   // if all units are the same, don't convert
-  if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) return {name, unit: arbitraryUnit, qty: _.sumBy(ingredients, 'qty')}
+  if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) return {name, unit: arbitraryUnit, qty: qtyReduce(ingredients)}
 
-  let standardizedIngredients = ingredients.map(x => _.assign(x, {
-    'unit': arbitraryUnit,
-    'qty': convert(x.qty).from(x.unit).to(arbitraryUnit)
-  })) // TODO: handle if library can't convert
+  let standardizedIngredients = ingredients.map(x => {
+    return {
+      ...x,
+      unit: arbitraryUnit,
+      qty: convert(x.qty).from(x.unit).to(arbitraryUnit)
+    }
+  })
 
-  let unitSum = _.sumBy(standardizedIngredients, 'qty')
+  let unitSum = qtyReduce(standardizedIngredients)
   let [qty, unit] = convert(unitSum).from(arbitraryUnit).toBest().split(' ')
   return {name, unit, qty}
 }
@@ -29,7 +40,7 @@ const state = {
 
 const getters = {
   recipeNames: state => state.recipes.map(x => x.name),
-  ingredientList: state => {
+  ingredientsList: state => {
     return _.chain(state.recipes)
       .flatMap('ingredients')
       .groupBy('name')
@@ -62,8 +73,10 @@ const actions = {
         'Content-Type': 'application/json'
       }
     })
-    myAxios.post('/parse', {'name': url})
-      .then(response => commit('pushToRecipes', response.data))
+    myAxios.post('/parse', {'name': url}) // convert quantities to float here
+      .then(response => {
+        commit('pushToRecipes', response.data)
+      })
       .catch(error => commit('setError', error))
   }
 }

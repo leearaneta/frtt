@@ -2,18 +2,21 @@
   <div id="app">
     <SearchContainer />
     <RecipeNamesContainer />
+    <IngredientsContainer />
   </div>
 </template>
 
 <script>
-import SearchContainer from './components/SearchContainer.vue'
-import RecipeNamesContainer from './components/RecipeNamesContainer.vue'
+import SearchContainer from './components/smart/SearchContainer.vue'
+import RecipeNamesContainer from './components/smart/RecipeNamesContainer.vue'
+import IngredientsContainer from './components/smart/IngredientsContainer.vue'
 
 export default {
   name: 'App',
   components: {
     SearchContainer,
-    RecipeNamesContainer
+    RecipeNamesContainer,
+    IngredientsContainer
   }
 }
 </script>
