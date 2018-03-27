@@ -1,38 +1,48 @@
 import _ from 'lodash'
-import convert from 'convert-units'
+import Qty from 'js-quantities'
 import axios from 'axios'
 import Fraction from 'fraction.js'
 
-function qtyReduce (ingredients) {
+function qtyAdd (ingredients) {
   return ingredients
     .map(i => i.qty)
     .reduce((a, b) => a.add(new Fraction(b)), new Fraction('0'))
+    .valueOf()
     .toString()
+}
+
+function unitAddConvert (ingredients) {
+  return ingredients
+    .map(i => Qty(new Fraction(i.qty).valueOf(), i.unit))
+    .reduce((a, b) => a.gt(b) ? a.add(b) : b.add(a))
+    .toPrec(0.1)
+    .toString()
+    .split(' ')
 }
 
 function merge (ingredients) { // wow, what a humungo functo
   let {name, unit: arbitraryUnit} = _.sample(ingredients)
   let splits = ingredients.map(i => _.omit(i, 'name'))
-  // if any entries have no quantity, aggregate should have no quantity
-  if (!ingredients.map(x => x.qty).reduce((a, b) => a && b)) return {name, splits}
-  // if any entries are unitless, aggregate should have no unit
-  if (!ingredients.map(x => x.unit).reduce((a, b) => a && b)) return {name, splits, qty: qtyReduce(ingredients)}
-  // if all units are the same, don't convert
-  if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) return {name, splits, unit: arbitraryUnit, qty: qtyReduce(ingredients)}
+  let bareIngredient = {name, splits}
 
-  try { // might fail because of conversion errors
-    let standardizedIngredients = splits.map(x => {
-      return {
-        ...x,
-        unit: arbitraryUnit,
-        qty: convert(x.qty).from(x.unit).to(arbitraryUnit)
-      }
-    })
-    let unitSum = qtyReduce(standardizedIngredients)
-    let [qty, unit] = convert(unitSum).from(arbitraryUnit).toBest().split(' ')
-    return {name, splits, unit, qty}
-  } catch (error) {
-    return {name, splits} // maybe set this to active:true
+  // if any entries have no quantity, aggregate should have no quantity or unit
+  if (!ingredients.map(x => x.qty).reduce((a, b) => a && b)) return bareIngredient
+  // if any entries have no unit...
+  if (!ingredients.map(x => x.unit).reduce((a, b) => a && b)) {
+    return _.chain(ingredients)
+      .map('unit')
+      .compact() ? {name, splits, qty: qtyAdd(ingredients)} : bareIngredient
+  }
+  // if all units are the same, don't convert
+  if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) {
+    return { ...bareIngredient, unit: arbitraryUnit, qty: qtyAdd(ingredients) }
+  }
+
+  try {
+    let [qty, unit] = unitAddConvert(splits)
+    return { ...bareIngredient, unit, qty }
+  } catch (e) {
+    return bareIngredient // maybe set this to active:true
   }
 }
 
