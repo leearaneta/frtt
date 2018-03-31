@@ -20,18 +20,20 @@ function unitAddConvert (ingredients) {
     .split(' ')
 }
 
-function merge (ingredients) { // wow, what a humungo functo
+function merge (ingredients) {
   let {name, unit: arbitraryUnit} = _.sample(ingredients)
   let splits = ingredients.map(i => _.omit(i, 'name'))
-  let bareIngredient = {name, splits}
+  let bareIngredient = {name, splits, expand: false}
 
   // if any entries have no quantity, aggregate should have no quantity or unit
   if (!ingredients.map(x => x.qty).reduce((a, b) => a && b)) return bareIngredient
   // if any entries have no unit...
   if (!ingredients.map(x => x.unit).reduce((a, b) => a && b)) {
-    return _.chain(ingredients)
-      .map('unit')
-      .compact() ? {name, splits, qty: qtyAdd(ingredients)} : bareIngredient
+    return !_.chain(ingredients) // if ALL entries have no unit, add up quantities
+      .map('unit') // if at least one entry has unit, just return bareIngredient
+      .compact()
+      .size()
+      .value() ? {...bareIngredient, qty: qtyAdd(ingredients)} : { ...bareIngredient, expand: true }
   }
   // if all units are the same, don't convert
   if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) {
@@ -42,7 +44,7 @@ function merge (ingredients) { // wow, what a humungo functo
     let [qty, unit] = unitAddConvert(splits)
     return { ...bareIngredient, unit, qty }
   } catch (e) {
-    return bareIngredient // maybe set this to active:true
+    return { ...bareIngredient, expand: true } // maybe set this to active:true
   }
 }
 
@@ -55,7 +57,7 @@ const getters = {
   recipeNames: state => state.recipes.map(x => x.name),
   ingredientsList: state => {
     return _.chain(state.recipes)
-      .flatMap(recipe => { // omg
+      .flatMap(recipe => { // omg javascript needs for comprehensions
         return recipe.ingredients.map(i => {
           return { ...i, recipe: recipe.name }
         })
@@ -64,7 +66,11 @@ const getters = {
       .values()
       .map(merge)
       .value()
-  }
+  },
+  defaultExpanded: (state, getters) => getters
+    .ingredientsList
+    .filter(i => i.expand)
+    .map(i => i.name)
 }
 
 const mutations = {

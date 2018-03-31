@@ -1,5 +1,5 @@
 <template>
-  <el-collapse-item v-bind:title="display" v-bind:name="index">
+  <el-collapse-item v-bind:title="display" v-bind:name="name">
     <Split
       v-for="(split, index) in splits"
       v-bind:recipe="split.recipe"

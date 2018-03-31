@@ -1,5 +1,5 @@
 <template>
-  <el-collapse v-model="activeNames">
+  <el-collapse v-model="defaultExpanded" @change="handleChange">
     <Ingredient
       v-for="(ingredient, index) in ingredientsList"
       v-bind:name="ingredient.name"
@@ -17,13 +17,8 @@ import Ingredient from '../dumb/Ingredient'
 
 export default {
   name: 'IngredientsContainer',
-  computed: { ...mapGetters(['ingredientsList']) },
-  components: { Ingredient },
-  data: function () {
-    return {
-      activeNames: []
-    }
-  }
+  computed: { ...mapGetters(['ingredientsList', 'defaultExpanded']) },
+  components: { Ingredient }
 }
 </script>
 
