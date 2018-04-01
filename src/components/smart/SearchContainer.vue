@@ -1,5 +1,6 @@
 <template>
   <div>
+    <div>{{ error }}</div>
     <el-input
       placeholder="Enter a Recipe URL !!"
       v-model="search"
@@ -10,7 +11,7 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions, mapState } from 'vuex'
 
 export default {
   name: 'SearchContainer',
@@ -28,7 +29,10 @@ export default {
       this.submitURL(this.search)
       this.search = ''
     }
-  }
+  },
+  computed: mapState({
+    error: state => state.shoppingList.error
+  })
 }
 </script>
 

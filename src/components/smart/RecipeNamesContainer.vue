@@ -15,7 +15,7 @@ import RecipeName from '../dumb/RecipeName'
 
 export default {
   name: 'RecipeNamesContainer',
-  computed: { ...mapGetters(['recipeNames']) },
+  computed: mapGetters(['recipeNames']),
   methods: {
     ...mapMutations(['removeRecipe']),
     handleRemove: function (event) {

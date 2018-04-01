@@ -55,6 +55,7 @@ const state = {
 
 const getters = {
   recipeNames: state => state.recipes.map(x => x.name),
+  getRecipeByURL: (state) => (url) => state.recipes.find(r => r.url === url),
   ingredientsList: state => {
     return _.chain(state.recipes)
       .flatMap(recipe => { // omg javascript needs for comprehensions
@@ -87,8 +88,11 @@ const mutations = {
 }
 
 const actions = {
-  submitURL ({commit, state}, url) {
-    commit('setError', '')
+  submitURL ({getters, commit, state}, url) {
+    if (getters.getRecipeByURL(url)) {
+      commit('setError', 'that url has already been submitted')
+      return
+    }
     let myAxios = axios.create({
       baseURL: 'http://localhost:8081',
       headers: {
@@ -96,11 +100,15 @@ const actions = {
         'Content-Type': 'application/json'
       }
     })
-    myAxios.post('/parse', {'name': url})
+    myAxios.post('/parse', {'address': url})
       .then(response => {
-        commit('pushToRecipes', response.data)
+        commit('pushToRecipes', { ...response.data, url })
+        !!state.error && commit('setError', '')
       })
-      .catch(error => commit('setError', error))
+      .catch(error => {
+        console.log(error)
+        commit('setError', "sorry, we can't handle that url :(")
+      })
   }
 }
 
