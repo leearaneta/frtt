@@ -3,7 +3,7 @@ import Qty from 'js-quantities'
 import axios from 'axios'
 import Fraction from 'fraction.js'
 
-function qtyAdd (ingredients) {
+function combineQuantities (ingredients) {
   return ingredients
     .map(i => i.qty)
     .reduce((a, b) => a.add(new Fraction(b)), new Fraction('0'))
@@ -11,7 +11,7 @@ function qtyAdd (ingredients) {
     .toString()
 }
 
-function unitAddConvert (ingredients) {
+function combineIngredients (ingredients) {
   return ingredients
     .map(i => Qty(new Fraction(i.qty).valueOf(), i.unit))
     .reduce((a, b) => a.gt(b) ? a.add(b) : b.add(a))
@@ -33,15 +33,15 @@ function merge (ingredients) {
       .map('unit') // if at least one entry has unit, just return bareIngredient
       .compact()
       .size()
-      .value() ? {...bareIngredient, qty: qtyAdd(ingredients)} : { ...bareIngredient, expand: true }
+      .value() ? { ...bareIngredient, qty: combineQuantities(ingredients) } : { ...bareIngredient, expand: true }
   }
   // if all units are the same, don't convert
   if (ingredients.map(x => x.unit).reduce((a, b) => a === b)) {
-    return { ...bareIngredient, unit: arbitraryUnit, qty: qtyAdd(ingredients) }
+    return { ...bareIngredient, unit: arbitraryUnit, qty: combineQuantities(ingredients) }
   }
 
   try {
-    let [qty, unit] = unitAddConvert(splits)
+    let [qty, unit] = combineIngredients(splits)
     return { ...bareIngredient, unit, qty }
   } catch (e) {
     return { ...bareIngredient, expand: true } // maybe set this to active:true
@@ -58,9 +58,10 @@ const getters = {
   getRecipeByURL: (state) => (url) => state.recipes.find(r => r.url === url),
   ingredientsList: state => {
     return _.chain(state.recipes)
-      .flatMap(recipe => { // omg javascript needs for comprehensions
+      .flatMap(recipe => {
         return recipe.ingredients.map(i => {
-          return { ...i, recipe: recipe.name }
+          let qty = new Fraction(i.qty).mul(recipe.qty).valueOf().toString()
+          return { ...i, qty, recipe: recipe.name }
         })
       })
       .groupBy('name')
@@ -102,7 +103,7 @@ const actions = {
     })
     myAxios.post('/parse', {'address': url})
       .then(response => {
-        commit('pushToRecipes', { ...response.data, url })
+        commit('pushToRecipes', { ...response.data, url, qty: 1 })
         !!state.error && commit('setError', '')
       })
       .catch(error => {

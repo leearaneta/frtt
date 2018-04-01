@@ -1,7 +1,7 @@
 <template>
   <li>
     <div>
-      {{name}}
+      <div>{{name}}</div>
       <el-button
         icon="el-icon-delete"
         size="mini"
