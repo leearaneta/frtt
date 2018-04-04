@@ -1,12 +1,12 @@
 <template>
-  <el-collapse v-model="defaultExpanded">
+  <el-collapse v-bind:value="defaultExpanded">
     <Ingredient
       v-for="(ingredient, index) in ingredientsList"
-      v-bind:name="ingredient.name"
-      v-bind:splits="ingredient.splits"
-      v-bind:unit="ingredient.unit"
-      v-bind:qty="ingredient.qty"
-      v-bind:key="index"
+      :name="ingredient.name"
+      :splits="ingredient.splits"
+      :unit="ingredient.unit"
+      :qty="ingredient.qty"
+      :key="index"
     />
   </el-collapse>
 </template>

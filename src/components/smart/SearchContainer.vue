@@ -18,11 +18,6 @@ export default {
   data: function () {
     return { search: '' }
   },
-  watch: {
-    search: function (a, b) {
-      this.search = a
-    }
-  },
   methods: {
     ...mapActions(['submitURL']),
     handleClick: function (event) {

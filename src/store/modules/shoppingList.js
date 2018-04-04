@@ -60,7 +60,7 @@ const getters = {
     return _.chain(state.recipes)
       .flatMap(recipe => {
         return recipe.ingredients.map(i => {
-          let qty = new Fraction(i.qty).mul(recipe.qty).valueOf().toString()
+          let qty = i.qty && new Fraction(i.qty).mul(recipe.qty).valueOf().toString()
           return { ...i, qty, recipe: recipe.name }
         })
       })
@@ -79,8 +79,14 @@ const mutations = {
   pushToRecipes (state, recipe) {
     state.recipes.push(recipe)
   },
-  removeRecipe (state, index) {
-    state.recipes.splice(index, 1)
+  changeRecipeQuantity (state, payload) {
+    let {qty, index} = payload
+    let currentRecipe = state.recipes[index]
+    let newRecipe = { ...currentRecipe, qty }
+    state.recipes.splice(index, 1, newRecipe)
+  },
+  removeRecipe (state, payload) {
+    state.recipes.splice(payload.index, 1)
   },
   setError (state, error) {
     state.error = error

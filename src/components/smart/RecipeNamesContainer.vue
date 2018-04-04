@@ -2,9 +2,11 @@
   <ul>
     <RecipeName
       v-for="(name, index) in recipeNames"
-      v-bind:name="name"
-      :handleRemove="handleRemove"
-      v-bind:key="index"
+      :name='name'
+      :index='index'
+      @handleChange='handleChange'
+      @handleRemove='handleRemove'
+      :key='index'
     />
   </ul>
 </template>
@@ -17,9 +19,12 @@ export default {
   name: 'RecipeNamesContainer',
   computed: mapGetters(['recipeNames']),
   methods: {
-    ...mapMutations(['removeRecipe']),
-    handleRemove: function (event) {
-      this.removeRecipe(event.target.index)
+    ...mapMutations(['removeRecipe', 'changeRecipeQuantity']),
+    handleRemove (index) {
+      this.removeRecipe({index})
+    },
+    handleChange (qty, index) {
+      this.changeRecipeQuantity({qty, index})
     }
   },
   components: { RecipeName }

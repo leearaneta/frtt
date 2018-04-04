@@ -1,11 +1,11 @@
 <template>
-  <el-collapse-item v-bind:title="display" v-bind:name="name">
+  <el-collapse-item :title="display" :name="name">
     <Split
       v-for="(split, index) in splits"
-      v-bind:recipe="split.recipe"
-      v-bind:qty="split.qty"
-      v-bind:unit="split.unit"
-      v-bind:key="index"
+      :recipe="split.recipe"
+      :qty="split.qty"
+      :unit="split.unit"
+      :key="index"
     />
   </el-collapse-item>
 </template>
