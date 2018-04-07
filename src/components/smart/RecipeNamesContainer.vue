@@ -1,5 +1,5 @@
 <template>
-  <ul>
+  <ul style="padding-left:0px;">
     <RecipeName
       v-for="(name, index) in recipeNames"
       :name='name'
@@ -33,6 +33,6 @@ export default {
 
 <style scoped>
 ul {
-  list-style-type: none
+  list-style-type: none;
 }
 </style>

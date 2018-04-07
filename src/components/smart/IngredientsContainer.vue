@@ -1,5 +1,5 @@
 <template>
-  <el-collapse v-bind:value="defaultExpanded">
+  <el-collapse v-bind:value="defaultExpanded" style="height:500px;width:100%;">
     <Ingredient
       v-for="(ingredient, index) in ingredientsList"
       :name="ingredient.name"

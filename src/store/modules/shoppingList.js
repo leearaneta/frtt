@@ -44,17 +44,20 @@ function merge (ingredients) {
     let [qty, unit] = combineIngredients(splits)
     return { ...bareIngredient, unit, qty }
   } catch (e) {
-    return { ...bareIngredient, expand: true } // maybe set this to active:true
+    return { ...bareIngredient, expand: true }
   }
 }
 
 const state = {
   recipes: [],
-  error: ''
+  error: '',
+  loading: false
 }
 
+let abbreviateName = (name) => { return name.length <= 50 ? name : name.slice(0, 45) + '...' }
+
 const getters = {
-  recipeNames: state => state.recipes.map(x => x.name),
+  recipeNames: state => state.recipes.map(x => x.name).map(abbreviateName),
   getRecipeByURL: (state) => (url) => state.recipes.find(r => r.url === url),
   ingredientsList: state => {
     return _.chain(state.recipes)
@@ -90,6 +93,9 @@ const mutations = {
   },
   setError (state, error) {
     state.error = error
+  },
+  setLoading (state, loading) {
+    state.loading = loading
   }
   // TODO: change amount of servings
 }
@@ -100,6 +106,7 @@ const actions = {
       commit('setError', 'that url has already been submitted')
       return
     }
+    commit('setLoading', true)
     let myAxios = axios.create({
       baseURL: 'http://localhost:8081',
       headers: {
@@ -115,6 +122,9 @@ const actions = {
       .catch(error => {
         console.log(error)
         commit('setError', "sorry, we can't handle that url :(")
+      })
+      .finally(() => {
+        commit('setLoading', false)
       })
   }
 }

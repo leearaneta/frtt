@@ -1,20 +1,17 @@
 <template>
-  <li>
-    <div>
-      <div>{{name}}</div>
-      <el-button
-        icon="el-icon-delete"
+  <li style="display: flex; margin-bottom: 10px; justify-content: space-between;">
+      <i
+        class="el-icon-delete recipe-name"
         size="mini"
         @click='handleRemove'
       />
+      <div>{{name}}</div>
       <el-input-number
+        class="recipe-name"
         size="mini"
-        min=0
-        type="number"
         controls-position="right"
         v-model='qty'
       />
-    </div>
   </li>
 </template>
 
@@ -42,6 +39,10 @@ export default {
 </script>
 
 <style>
+
+.recipe-name {
+  margin: 0 10px 0px 10px;
+}
 
 .el-input-number--mini {
   width: 50px;

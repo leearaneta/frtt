@@ -1,12 +1,13 @@
 <template>
   <div>
-    <div>{{ error }}</div>
     <el-input
+      size="small"
+      style="width:75%;"
       placeholder="Enter a Recipe URL !!"
       v-model="search"
       clearable
     />
-    <el-button type="primary" v-on:click="handleClick">Huzzah</el-button>
+    <el-button type="primary" :loading="loading" size="small" @click="handleClick">Huzzah</el-button>
   </div>
 </template>
 
@@ -16,7 +17,9 @@ import { mapActions, mapState } from 'vuex'
 export default {
   name: 'SearchContainer',
   data: function () {
-    return { search: '' }
+    return {
+      search: ''
+    }
   },
   methods: {
     ...mapActions(['submitURL']),
@@ -26,10 +29,12 @@ export default {
     }
   },
   computed: mapState({
-    error: state => state.shoppingList.error
+    error: state => state.shoppingList.error,
+    loading: state => state.shoppingList.loading
   })
 }
 </script>
 
 <style scoped>
+
 </style>
