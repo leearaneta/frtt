@@ -63,8 +63,13 @@ const getters = {
     return _.chain(state.recipes)
       .flatMap(recipe => {
         return recipe.ingredients.map(i => {
-          let qty = i.qty && new Fraction(i.qty).mul(recipe.qty).valueOf().toString()
-          return { ...i, qty, recipe: recipe.name }
+          // if fraction can't parse, return qty as undefined
+          try {
+            let qty = i.qty && new Fraction(i.qty).mul(recipe.qty).valueOf().toString()
+            return { ...i, qty, recipe: recipe.name }
+          } catch (e) {
+            return { ...i, qty: undefined, recipe: recipe.name }
+          }
         })
       })
       .groupBy('name')
@@ -80,6 +85,7 @@ const getters = {
 
 const mutations = {
   pushToRecipes (state, recipe) {
+    debugger
     state.recipes.push(recipe)
   },
   changeRecipeQuantity (state, payload) {
