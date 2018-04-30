@@ -29,5 +29,4 @@ RUN addgroup app && adduser --ingroup app app && \
 USER app
 
 WORKDIR $HOME/ingredient-scraper
-RUN sbt init
 CMD sbt run
