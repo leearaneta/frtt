@@ -1,0 +1,22 @@
+version: '3'
+services:
+  scraper:
+    build: ./ingredient-scraper
+    ports:
+      - '8081:8081'
+    volumes:
+      - ./ingredient-scraper/src:/home/app/ingredient-scraper/src
+  tagger:
+    build: ./ingredient-phrase-tagger
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./ingredient-phrase-tagger/server.py:/home/app/ingredient-phrase-tagger/server.py
+  gui:
+    build: ./scraper-gui
+    environment:
+      NODE_ENV: development
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./scraper-gui/src:/home/app/scraper-gui/src
