@@ -14,27 +14,26 @@ import java.net.URLEncoder
 import io.circe._
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.generic.semiauto._
+import io.circe.generic.auto._
 import io.finch._
 import io.finch.syntax._
 import io.finch.circe._
 import com.hypertino.inflector.English
-
-type RawLists = List[List[String]]
 
 case class Ingredient(name: String, unit: Option[String], qty: Option[String])
 case class Recipe(name: String, ingredients: List[Ingredient])
 case class JSONRPCPayload[A](method: String, params: A, jsonrpc: String = "2.0", id: Int = 0)
 case class URL(address: String)
 
+import Main.RawLists
+sealed trait JSONRPCParams
+final case class SeleniumDomain(url: String, locatorType: String, locatorName: String) extends JSONRPCParams
+final case class JSONLists(rawLists: RawLists) extends JSONRPCParams
+
 object Main extends App {
 
-  implicit val encodeTaggerPayload: Encoder[JSONRPCPayload[RawLists]] = deriveEncoder
-  implicit val encodeSeleniumPayload: Encoder[JSONRPCPayload[SeleniumDomain]] = deriveEncoder
-  implicit val encodeIngredient: Encoder[Ingredient] = deriveEncoder
-  implicit val encodeRecipe: Encoder[Recipe] = deriveEncoder
+  type RawLists = List[List[String]]
   implicit val decodeIngredient: Decoder[Ingredient] = Decoder.forProduct3("name", "unit", "qty")(Ingredient.apply)
-  implicit val decodeURL: Decoder[URL] = deriveDecoder
 
   def loadHTMLWithJsoup(u: String): Document = Jsoup.connect(u).timeout(10000).get
 
@@ -84,7 +83,7 @@ object Main extends App {
     .map(getChildrenText)
 
   // refactor parser and validator into helper functions
-  def callJSONRPC[A](service: String, method: String, params: A): Future[String] = {
+  def callJSONRPC(service: String, method: String, params: JSONRPCParams): Future[String] = {
     val jsonString: String = JSONRPCPayload(method, params).asJson.toString
     val client: Service[Request, Response] = ClientBuilder()
       .stack(Http.client)
@@ -140,7 +139,7 @@ object Main extends App {
     }
 
   def foodifyText(l: RawLists): Future[List[Ingredient]] = for {
-    response: String <- callJSONRPC("tagger:4000", "parse_all", l)
+    response: String <- callJSONRPC("tagger:4000", "parse_all", JSONLists(l))
     allIngredients: List[List[Ingredient]] = decodeJSON(response) { _.hcursor.get[List[List[Ingredient]]]("result")}
     (normalIngredients: List[Ingredient], sketchyIngredients: List[Ingredient]) = split(allIngredients)
     validationJSON: Seq[String] <- Future.collect(sketchyIngredients.map(callValidator)) // make api call to validate

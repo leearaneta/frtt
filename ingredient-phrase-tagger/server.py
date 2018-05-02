@@ -36,8 +36,8 @@ def parse_ingredients(ingredients):
     return [i for i in parsed_ingredients if i.get('name')]
 
 @dispatcher.add_method
-def parse_all(*args):
-    return [parse_ingredients(i) for i in args]
+def parse_all(**kwargs):
+    return [parse_ingredients(i) for i in kwargs['JSONLists']['rawLists']]
 
 
 @Request.application
