@@ -1,9 +1,6 @@
 import AppConfig._
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-import org.openqa.selenium.{By, JavascriptExecutor}
-import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 import com.twitter.finagle.http.filter.Cors
 import com.twitter.finagle.{Http, Service}
 import com.twitter.finagle.builder.ClientBuilder
@@ -23,14 +20,17 @@ import io.finch.syntax._
 import io.finch.circe._
 import com.hypertino.inflector.English
 
+type RawLists = List[List[String]]
+
 case class Ingredient(name: String, unit: Option[String], qty: Option[String])
 case class Recipe(name: String, ingredients: List[Ingredient])
-case class ParserPayload(method: String, params: List[List[String]], jsonrpc: String = "2.0", id: Int = 0)
+case class JSONRPCPayload[A](method: String, params: A, jsonrpc: String = "2.0", id: Int = 0)
 case class URL(address: String)
 
 object Main extends App {
 
-  implicit val encodePayload: Encoder[ParserPayload] = deriveEncoder
+  implicit val encodeTaggerPayload: Encoder[JSONRPCPayload[RawLists]] = deriveEncoder
+  implicit val encodeSeleniumPayload: Encoder[JSONRPCPayload[SeleniumDomain]] = deriveEncoder
   implicit val encodeIngredient: Encoder[Ingredient] = deriveEncoder
   implicit val encodeRecipe: Encoder[Recipe] = deriveEncoder
   implicit val decodeIngredient: Decoder[Ingredient] = Decoder.forProduct3("name", "unit", "qty")(Ingredient.apply)
@@ -38,19 +38,12 @@ object Main extends App {
 
   def loadHTMLWithJsoup(u: String): Document = Jsoup.connect(u).timeout(10000).get
 
-  def loadHTMLWithSelenium(u: String, className: String): Document = {
-    val driver = new ChromeDriver()
-    driver.get(u)
-    driver.asInstanceOf[JavascriptExecutor].executeScript("window.scrollBy(0, 2500)")
-    new WebDriverWait(driver, 15).until(
-      ExpectedConditions.presenceOfElementLocated(By.className(className))
-    )
-    Jsoup.parse(driver.getPageSource)
-  }
+  def loadHTMLWithSelenium(sd: SeleniumDomain): Future[Document] =
+    callJSONRPC("selenium:4004", "scrape", sd) map { s => Jsoup.parse(s) }
 
-  def loadHTML(u: String): Document = seleniumDomains.find(d => u contains d.domain) match {
-    case Some(domain) => loadHTMLWithSelenium(u, domain.className)
-    case None => loadHTMLWithJsoup(u)
+  def loadHTML(u: String): Future[Document] = seleniumDomains.find(d => u contains d.url) match {
+    case Some(domain) => loadHTMLWithSelenium(domain)
+    case None => Future { loadHTMLWithJsoup(u) }
   }
 
   // TODO: clean HTML based on domain
@@ -59,7 +52,7 @@ object Main extends App {
     doc
   }
 
-  def prepareHTML: String => Document = loadHTML _ andThen cleanHTML
+  def prepareHTML: String => Future[Document] = loadHTML(_) map cleanHTML
 
   def replaceAbbreviations(s: String): String =
     abbreviations.foldLeft(s)((a, b) => a.replaceAllLiterally(b._1, b._2))
@@ -79,26 +72,26 @@ object Main extends App {
       .groupBy(identity).mapValues(_.size).values
       .max >= e.children.size / 2.toFloat
 
-  def getUnorderedLists(d: Document): List[List[String]] = d
+  def getUnorderedLists(d: Document): RawLists = d
     .getElementsByTag("ul")
     .asScala.toList
     .map(getChildrenText)
 
-  def inferLists(d: Document): List[List[String]] = d
+  def inferLists(d: Document): RawLists = d
     .getAllElements
     .asScala.toList
     .filter(suspectList)
     .map(getChildrenText)
 
   // refactor parser and validator into helper functions
-  def callParser(l: List[List[String]]): Future[String] = {
-    val jsonString: String = ParserPayload("parse_all", l).asJson.toString
+  def callJSONRPC[A](service: String, method: String, params: A): Future[String] = {
+    val jsonString: String = JSONRPCPayload(method, params).asJson.toString
     val client: Service[Request, Response] = ClientBuilder()
       .stack(Http.client)
-      .hosts("tagger:4000")
+      .hosts(service)
       .build()
     val request: Request = RequestBuilder()
-      .url("http://tagger:4000/jsonrpc")
+      .url(s"http://$service/jsonrpc")
       .buildPost(Buf.Utf8(jsonString))
     client(request).map(_.contentString)
   }
@@ -146,8 +139,8 @@ object Main extends App {
       case _ => true
     }
 
-  def foodifyText(l: List[List[String]]): Future[List[Ingredient]] = for {
-    response: String <- callParser(l)
+  def foodifyText(l: RawLists): Future[List[Ingredient]] = for {
+    response: String <- callJSONRPC("tagger:4000", "parse_all", l)
     allIngredients: List[List[Ingredient]] = decodeJSON(response) { _.hcursor.get[List[List[Ingredient]]]("result")}
     (normalIngredients: List[Ingredient], sketchyIngredients: List[Ingredient]) = split(allIngredients)
     validationJSON: Seq[String] <- Future.collect(sketchyIngredients.map(callValidator)) // make api call to validate
@@ -160,7 +153,7 @@ object Main extends App {
     if ingredients.nonEmpty
   } yield ingredients
 
-  def foodifyHTML(f: Document => List[List[String]]) = f andThen foodifyText
+  def foodifyHTML(f: Document => RawLists) = f andThen foodifyText
 
   def foodify(d: Document): Future[List[Ingredient]] = foodifyHTML(getUnorderedLists)(d).rescue {
     case _ => foodifyHTML(inferLists)(d)
@@ -179,7 +172,7 @@ object Main extends App {
     } yield Recipe(d.title, formattedIngredients)
   }
 
-  def execute: String => Future[Recipe] = prepareHTML andThen getRecipeFromHTML
+  def execute: String => Future[Recipe] = prepareHTML(_) flatMap getRecipeFromHTML
 
   val parseEndpoint: Endpoint[Recipe] = post("parse" :: jsonBody[URL]) { u: URL => execute(u.address).map(Ok) }
   val service = parseEndpoint.toServiceAs[Application.Json]
