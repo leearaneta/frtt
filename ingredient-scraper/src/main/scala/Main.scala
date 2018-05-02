@@ -1,9 +1,12 @@
 import AppConfig._
+
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
-import org.openqa.selenium.{By, JavascriptExecutor}
-import org.openqa.selenium.chrome.ChromeDriver
+
+import org.openqa.selenium.By
+import org.openqa.selenium.remote.{RemoteWebDriver, DesiredCapabilities}
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
+
 import com.twitter.finagle.http.filter.Cors
 import com.twitter.finagle.{Http, Service}
 import com.twitter.finagle.builder.ClientBuilder
@@ -17,7 +20,8 @@ import java.net.URLEncoder
 import io.circe._
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.generic.semiauto._
+import io.circe.generic.auto._
+
 import io.finch._
 import io.finch.syntax._
 import io.finch.circe._
@@ -27,29 +31,27 @@ case class Ingredient(name: String, unit: Option[String], qty: Option[String])
 case class Recipe(name: String, ingredients: List[Ingredient])
 case class ParserPayload(method: String, params: List[List[String]], jsonrpc: String = "2.0", id: Int = 0)
 case class URL(address: String)
+case class SeleniumDomain(url: String, locatorType: String, locatorName: String)
 
 object Main extends App {
 
-  implicit val encodePayload: Encoder[ParserPayload] = deriveEncoder
-  implicit val encodeIngredient: Encoder[Ingredient] = deriveEncoder
-  implicit val encodeRecipe: Encoder[Recipe] = deriveEncoder
   implicit val decodeIngredient: Decoder[Ingredient] = Decoder.forProduct3("name", "unit", "qty")(Ingredient.apply)
-  implicit val decodeURL: Decoder[URL] = deriveDecoder
 
   def loadHTMLWithJsoup(u: String): Document = Jsoup.connect(u).timeout(10000).get
 
-  def loadHTMLWithSelenium(u: String, className: String): Document = {
-    val driver = new ChromeDriver()
+  def loadHTMLWithSelenium(u: String, locatorName: String): Document = {
+    val driver = new RemoteWebDriver(new java.net.URL("http://localhost:4444/wd/hub"), DesiredCapabilities.firefox)
     driver.get(u)
-    driver.asInstanceOf[JavascriptExecutor].executeScript("window.scrollBy(0, 2500)")
     new WebDriverWait(driver, 15).until(
-      ExpectedConditions.presenceOfElementLocated(By.className(className))
+      ExpectedConditions.presenceOfElementLocated(By.className(locatorName))
     )
-    Jsoup.parse(driver.getPageSource)
+    val doc = Jsoup.parse(driver.getPageSource)
+    driver.quit()
+    doc
   }
 
-  def loadHTML(u: String): Document = seleniumDomains.find(d => u contains d.domain) match {
-    case Some(domain) => loadHTMLWithSelenium(u, domain.className)
+  def loadHTML(u: String): Document = seleniumDomains.find(d => u contains d.url) match {
+    case Some(domain) => loadHTMLWithSelenium(u, domain.locatorName)
     case None => loadHTMLWithJsoup(u)
   }
 
