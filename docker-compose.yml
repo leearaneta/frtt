@@ -20,3 +20,14 @@ services:
       - '8080:8080'
     volumes:
       - ./scraper-gui/src:/home/app/scraper-gui/src
+  selenium-hub:
+    image: selenium/hub
+    ports: 
+      - '4444:4444'
+  firefox:
+    image: selenium/node-firefox
+    depends_on:
+      - selenium-hub
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
