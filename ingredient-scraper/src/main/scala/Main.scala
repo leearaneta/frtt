@@ -40,7 +40,7 @@ object Main extends App {
   def loadHTMLWithJsoup(u: String): Document = Jsoup.connect(u).timeout(10000).get
 
   def loadHTMLWithSelenium(u: String, locatorName: String): Document = {
-    val driver = new RemoteWebDriver(new java.net.URL("http://localhost:4444/wd/hub"), DesiredCapabilities.firefox)
+    val driver = new RemoteWebDriver(new java.net.URL("http://172.18.0.2:4444/wd/hub"), DesiredCapabilities.firefox)
     driver.get(u)
     new WebDriverWait(driver, 15).until(
       ExpectedConditions.presenceOfElementLocated(By.className(locatorName))

@@ -26,7 +26,8 @@ services:
       - '4444:4444'
   firefox:
     image: selenium/node-firefox
+    depends_on:
+      - selenium-hub
     environment:
-      HUB_PORT_4444_TCP_ADDR: hub
-    links:
-    - selenium-hub:hub
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
