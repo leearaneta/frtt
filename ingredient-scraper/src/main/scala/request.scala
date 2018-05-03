@@ -9,7 +9,7 @@ import com.twitter.io.Buf
 import com.twitter.util.Future
 import data.{Ingredient, ParserPayload}
 
-package object request {
+object request {
 
   def callParser(l: List[List[String]]): Future[String] = {
     val jsonString: String = ParserPayload("parse_all", l).asJson.toString

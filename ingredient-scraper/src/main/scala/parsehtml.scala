@@ -1,4 +1,4 @@
-import data.{abbreviations, seleniumDomains}
+import data.{abbreviations, seleniumDomains, RawLists}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.openqa.selenium.By
@@ -7,7 +7,7 @@ import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 
 import scala.collection.JavaConverters._
 
-package object parsehtml {
+object parsehtml {
 
   def loadHTMLWithJsoup(u: String): Document = Jsoup.connect(u).timeout(10000).get
 
@@ -53,12 +53,12 @@ package object parsehtml {
       .groupBy(identity).mapValues(_.size).values
       .max >= e.children.size / 2.toFloat
 
-  def getUnorderedLists(d: Document): List[List[String]] = d
+  def getUnorderedLists(d: Document): RawLists = d
     .getElementsByTag("ul")
     .asScala.toList
     .map(getChildrenText)
 
-  def inferLists(d: Document): List[List[String]] = d
+  def inferLists(d: Document): RawLists = d
     .getAllElements
     .asScala.toList
     .filter(suspectList)

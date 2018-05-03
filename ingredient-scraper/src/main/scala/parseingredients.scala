@@ -1,10 +1,10 @@
+import data.{Ingredient, RawLists}
 import request.{callParser, callValidator}
 import com.twitter.util.Future
-import data.Ingredient
 import io.circe.{Decoder, Json, ParsingFailure}
 import io.circe.parser.parse
 
-package object parseingredients {
+object parseingredients {
 
   implicit val decodeIngredient: Decoder[Ingredient] = Decoder.forProduct3("name", "unit", "qty")(Ingredient.apply)
 
@@ -47,7 +47,7 @@ package object parseingredients {
       .map { case (_, value) => value }
   } yield validatedIngredients
 
-  def foodifyText(l: List[List[String]]): Future[List[Ingredient]] = for {
+  def foodifyText(l: RawLists): Future[List[Ingredient]] = for {
     response: String <- callParser(l)
     allIngredients: List[List[Ingredient]] = decodeJSON(response) { _.hcursor.get[List[List[Ingredient]]]("result")}
     (normalIngredients: List[Ingredient], sketchyIngredients: List[Ingredient]) = split(allIngredients)

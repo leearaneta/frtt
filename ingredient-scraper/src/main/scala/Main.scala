@@ -1,6 +1,6 @@
 import parsehtml.{getUnorderedLists, inferLists, prepareHTML}
 import parseingredients.foodifyText
-import data.{Ingredient, Recipe, Address}
+import data.{Ingredient, Recipe, Address, RawLists}
 
 import org.jsoup.nodes.Document
 
@@ -11,12 +11,14 @@ import com.twitter.util.{Await, Future}
 
 import io.finch._
 import io.finch.syntax._
+import io.finch.circe._
+import io.circe.generic.auto._
 
 import com.hypertino.inflector.English
 
 object Main extends App {
 
-  def foodifyHTML(f: Document => List[List[String]]) = f andThen foodifyText
+  def foodifyHTML(f: Document => RawLists) = f andThen foodifyText
 
   def foodify(d: Document): Future[List[Ingredient]] = foodifyHTML(getUnorderedLists)(d).rescue {
     case _ => foodifyHTML(inferLists)(d)
