@@ -1,5 +1,7 @@
 # CRF Ingredient Phrase Tagger
 
+forked from [nytimes/ingredient-phrase-tagger](https://github.com/nytimes/ingredient-phrase-tagger)
+
 This repo contains scripts to extract the Quantity, Unit, Name, and Comments
 from unstructured ingredient phrases. We use it on [Cooking][nytc] to format
 incoming recipes. Given the following input:
@@ -125,4 +127,3 @@ See the top of this README for an example of the expected output.
 [eg]:       mailto:ericagreene@gmail.com
 [am]:       http://github.com/adammck
 [license]:  https://github.com/NYTimes/ingredient-phrase-tagger/blob/master/LICENSE.md
-# hacked-nytimes-parser
