@@ -1,9 +1,11 @@
 import data.{Ingredient, RawLists}
 import request.{callParser, callValidator}
+import scala.concurrent.Future
 
-import com.twitter.util.Future
+import cats.data.EitherT
+import cats.implicits._
 
-import io.circe.{Decoder, Json, ParsingFailure}
+import io.circe.{Error, Decoder, Json, ParsingFailure}
 import io.circe.parser.parse
 
 object parseingredients {
@@ -17,13 +19,10 @@ object parseingredients {
       case _ => false
     } / l.length.toFloat >= .42 // some arbitrary number
 
-  def decodeJSON[A](s: String)(jsonDecoder: Json => Either[io.circe.Error, A]): A = {
-    val decoded: Either[io.circe.Error, A] = for {
-      json <- parse(s)
-      decoded <- jsonDecoder(json)
-    } yield decoded
-    decoded.getOrElse(throw new Exception("couldn't decode"))
-  }
+  def decodeJSON[A](s: String)(jsonDecoder: Json => Either[Error, A]): Either[Error, A] = for {
+    json <- parse(s)
+    decoded <- jsonDecoder(json)
+  } yield decoded
 
   def validate(j: Json): Either[io.circe.Error, Boolean] = j
     .hcursor
@@ -40,18 +39,18 @@ object parseingredients {
     case _ => true
   }
 
-  def validateSketchyIngredients(sketchyIngredients: List[Ingredient]): Future[List[Ingredient]] = for {
-    validationJSON: Seq[String] <- Future.collect(sketchyIngredients.map(callValidator))
-    validatedIngredients: List[Ingredient] = validationJSON.map(decodeJSON(_)(validate))
-      .toList
+  def validateSketchyIngredients(sketchyIngredients: List[Ingredient]): EitherT[Future, Error, List[Ingredient]] = for {
+    validationJSON <- EitherT.right(sketchyIngredients.traverse(callValidator))
+    validation: List[Boolean] <- EitherT(Future { validationJSON.traverse(decodeJSON(_)(validate)) })
+    validatedIngredients: List[Ingredient] = validation
       .zip(sketchyIngredients) // zip sketchy ingredients with boolean values
       .filter { case (bool, _) => bool } // filter out ones that are invalid
       .map { case (_, value) => value }
   } yield validatedIngredients
 
-  def foodifyText(l: RawLists): Future[List[Ingredient]] = for {
-    response: String <- callParser(l)
-    allIngredients: List[List[Ingredient]] = decodeJSON(response) { _.hcursor.get[List[List[Ingredient]]]("result")}
+  def foodifyText(l: RawLists): EitherT[Future, Error, List[Ingredient]] = for {
+    response: String <- EitherT.right(callParser(l))
+    allIngredients: List[List[Ingredient]] <- EitherT(Future {decodeJSON(response) { _.hcursor.get[List[List[Ingredient]]]("result")} })
     (normalIngredients: List[Ingredient], sketchyIngredients: List[Ingredient]) = split(allIngredients)
     validatedIngredients: List[Ingredient] <- validateSketchyIngredients(sketchyIngredients)
     ingredients = normalIngredients ::: validatedIngredients

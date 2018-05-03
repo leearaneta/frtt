@@ -1,5 +1,8 @@
 import AppConfig.{appID, appKey}
 import data.{Ingredient, ParserPayload}
+import futureconvert._
+
+import scala.concurrent.Future
 
 import java.net.URLEncoder
 import io.circe.syntax._
@@ -9,8 +12,8 @@ import com.twitter.finagle.{Http, Service}
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.http.{Request, RequestBuilder, Response}
 import com.twitter.io.Buf
-import com.twitter.util.Future
 
+// maybe can refactor this a bit
 object request {
 
   def callParser(l: List[List[String]]): Future[String] = {
@@ -22,7 +25,7 @@ object request {
     val request: Request = RequestBuilder()
       .url("http://tagger:4000/jsonrpc")
       .buildPost(Buf.Utf8(jsonString))
-    client(request).map(_.contentString)
+    client(request).map(_.contentString).asScala
   }
 
   def callValidator(i: Ingredient): Future[String] = {
@@ -35,7 +38,7 @@ object request {
     val request = RequestBuilder()
       .url(s"https://api.edamam.com/api/food-database/parser?" + paramString)
       .buildGet()
-    client(request).map(_.contentString)
+    client(request).map(_.contentString).asScala
   }
 
 }

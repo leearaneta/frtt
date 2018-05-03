@@ -1,6 +1,8 @@
 import data.{abbreviations, seleniumDomains, RawLists}
+
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
+
 import org.openqa.selenium.By
 import org.openqa.selenium.remote.{DesiredCapabilities, RemoteWebDriver}
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
