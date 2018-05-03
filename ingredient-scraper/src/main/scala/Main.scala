@@ -40,7 +40,12 @@ object Main extends App {
 
   def execute: String => Future[Recipe] = prepareHTML andThen getRecipeFromHTML
 
-  val parseEndpoint: Endpoint[Recipe] = post("parse" :: jsonBody[Address]) { a: Address => execute(a.url).map(Ok) }
+  val parseEndpoint: Endpoint[Recipe] = post("parse" :: jsonBody[Address]) {
+    a: Address => execute(a.url).map(Ok)
+  } handle {
+    case e: Exception => BadRequest(e)
+  }
+
   val service = parseEndpoint.toServiceAs[Application.Json]
 
   val policy: Cors.Policy = Cors.Policy(

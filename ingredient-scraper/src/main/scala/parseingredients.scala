@@ -3,7 +3,7 @@ import request.{callParser, callValidator}
 
 import com.twitter.util.Future
 
-import io.circe.{Decoder, Json, ParsingFailure}
+import io.circe.{Error, Decoder, Json, ParsingFailure}
 import io.circe.parser.parse
 
 object parseingredients {
@@ -17,7 +17,7 @@ object parseingredients {
       case _ => false
     } / l.length.toFloat >= .42 // some arbitrary number
 
-  def decodeJSON[A](s: String)(jsonDecoder: Json => Either[io.circe.Error, A]): A = {
+  def decodeJSON[A](s: String)(jsonDecoder: Json => Either[Error, A]): A = {
     val decoded: Either[io.circe.Error, A] = for {
       json <- parse(s)
       decoded <- jsonDecoder(json)
@@ -25,7 +25,7 @@ object parseingredients {
     decoded.getOrElse(throw new Exception("couldn't decode"))
   }
 
-  def validate(j: Json): Either[io.circe.Error, Boolean] = j
+  def validate(j: Json): Either[Error, Boolean] = j
     .hcursor
     .downField("parsed")
     .values
