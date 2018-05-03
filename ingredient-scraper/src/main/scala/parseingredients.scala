@@ -18,7 +18,7 @@ object parseingredients {
     } / l.length.toFloat >= .42 // some arbitrary number
 
   def decodeJSON[A](s: String)(jsonDecoder: Json => Either[Error, A]): A = {
-    val decoded: Either[io.circe.Error, A] = for {
+    val decoded: Either[Error, A] = for {
       json <- parse(s)
       decoded <- jsonDecoder(json)
     } yield decoded
