@@ -120,7 +120,7 @@ const actions = {
         'Content-Type': 'application/json'
       }
     })
-    myAxios.post('/parse', {'address': url})
+    myAxios.post('/parse', {url})
       .then(response => {
         commit('pushToRecipes', { ...response.data, url, qty: 1 })
         !!state.error && commit('setError', '')
