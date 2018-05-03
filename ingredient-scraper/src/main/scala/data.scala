@@ -21,4 +21,5 @@ object data {
   val seleniumDomains = List(
     SeleniumDomain("yummly", "CLASS_NAME", "recipe-ingredients")
   )
+
 }

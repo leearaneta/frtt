@@ -1,6 +1,8 @@
 import data.{Ingredient, RawLists}
 import request.{callParser, callValidator}
+
 import com.twitter.util.Future
+
 import io.circe.{Decoder, Json, ParsingFailure}
 import io.circe.parser.parse
 

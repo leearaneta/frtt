@@ -1,13 +1,15 @@
+import AppConfig.{appID, appKey}
+import data.{Ingredient, ParserPayload}
+
 import java.net.URLEncoder
 import io.circe.syntax._
 import io.circe.generic.auto._
-import AppConfig.{appID, appKey}
+
 import com.twitter.finagle.{Http, Service}
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.http.{Request, RequestBuilder, Response}
 import com.twitter.io.Buf
 import com.twitter.util.Future
-import data.{Ingredient, ParserPayload}
 
 object request {
 
