@@ -1,5 +1,5 @@
 import AppConfig.{appID, appKey}
-import data.{Ingredient, ParserPayload}
+import data.{InvalidatedIngredient, ParserPayload}
 
 import java.net.URLEncoder
 import io.circe.syntax._
@@ -25,7 +25,7 @@ object request {
     client(request).map(_.contentString)
   }
 
-  def callValidator(i: Ingredient): Future[String] = {
+  def callValidator(i: InvalidatedIngredient): Future[String] = {
     val client: Service[Request, Response] = ClientBuilder()
       .stack(Http.client)
       .hosts("api.edamam.com:443")

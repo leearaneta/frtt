@@ -1,6 +1,6 @@
 import parsehtml.{getUnorderedLists, inferLists, prepareHTML}
 import parseingredients.foodifyText
-import data.{Ingredient, Recipe, Address, RawLists}
+import data.{ValidatedIngredient, Recipe, Address, RawLists}
 
 import org.jsoup.nodes.Document
 
@@ -20,7 +20,7 @@ object Main extends App {
 
   def foodifyHTML(f: Document => RawLists) = f andThen foodifyText
 
-  def foodify(d: Document): Future[List[Ingredient]] = foodifyHTML(getUnorderedLists)(d).rescue {
+  def foodify(d: Document): Future[List[ValidatedIngredient]] = foodifyHTML(getUnorderedLists)(d).rescue {
     case _ => foodifyHTML(inferLists)(d)
   }
 
@@ -28,7 +28,7 @@ object Main extends App {
   def dedupe(s: String): String = s.split(" ").distinct.mkString(" ")
 
   def formatName = singularize _ andThen dedupe
-  def formatIngredient(i: Ingredient) = i.copy(name = formatName(i.name))
+  def formatIngredient(i: ValidatedIngredient) = i.copy(name = formatName(i.name))
 
   def getRecipeFromHTML(d: Document): Future[Recipe] = {
     for {
@@ -40,7 +40,12 @@ object Main extends App {
 
   def execute: String => Future[Recipe] = prepareHTML andThen getRecipeFromHTML
 
-  val parseEndpoint: Endpoint[Recipe] = post("parse" :: jsonBody[Address]) { a: Address => execute(a.url).map(Ok) }
+  val parseEndpoint: Endpoint[Recipe] = post("parse" :: jsonBody[Address]) {
+    a: Address => execute(a.url).map(Ok)
+  } handle {
+    case e: Exception => BadRequest(e)
+  }
+
   val service = parseEndpoint.toServiceAs[Application.Json]
 
   val policy: Cors.Policy = Cors.Policy(
