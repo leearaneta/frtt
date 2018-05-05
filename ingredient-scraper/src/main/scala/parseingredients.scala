@@ -1,4 +1,4 @@
-import data.{Ingredient, RawLists}
+import data.{InvalidatedIngredient, ValidatedIngredient, RawLists}
 import request.{callParser, callValidator}
 
 import com.twitter.util.Future
@@ -8,12 +8,12 @@ import io.circe.parser.parse
 
 object parseingredients {
 
-  implicit val decodeIngredient: Decoder[Ingredient] = Decoder.forProduct3("name", "unit", "qty")(Ingredient.apply)
+  implicit val decodeIngredient: Decoder[InvalidatedIngredient] = Decoder.forProduct3("name", "unit", "qty")(InvalidatedIngredient.apply)
 
-  def isIngredientList(l: List[Ingredient]): Boolean =
+  def isIngredientList(l: List[InvalidatedIngredient]): Boolean =
     if (l.isEmpty) false
     else l.count {
-      case Ingredient(_, Some(_), Some(_)) => true
+      case InvalidatedIngredient(_, Some(_), Some(_)) => true
       case _ => false
     } / l.length.toFloat >= .42 // some arbitrary number
 
@@ -25,36 +25,42 @@ object parseingredients {
     decoded.getOrElse(throw new Exception("couldn't decode"))
   }
 
-  def validate(j: Json): Either[Error, Boolean] = j
+  def validateJSON(j: Json): Either[Error, Boolean] = j
     .hcursor
     .downField("parsed")
     .values
     .toRight(ParsingFailure("couldn't validate", throw new Exception()))
     .map(_.nonEmpty)
 
-  def split(l: List[List[Ingredient]]): (List[Ingredient], List[Ingredient]) = l
-    .filter(isIngredientList) // take out most entries that aren't ingredients
-    .flatten // combine to one list of ingredients
-    .partition { // separate between sketchy and normal ingredients
-    case Ingredient(_, None, None) => false
-    case _ => true
+  def convertInvalidatedIngredient(i: InvalidatedIngredient): ValidatedIngredient =
+    ValidatedIngredient.tupled(InvalidatedIngredient.unapply(i).get)
+
+  def split(l: List[List[InvalidatedIngredient]]): (List[ValidatedIngredient], List[InvalidatedIngredient]) = {
+    val splitIngredients = l
+      .filter(isIngredientList) // take out most entries that aren't ingredients
+      .flatten // combine to one list of ingredients
+      .partition { // separate between invalidated / validated ingredients
+        case InvalidatedIngredient(_, None, None) => false
+        case _ => true
+      }
+    splitIngredients.copy(_1 = splitIngredients._1.map(convertInvalidatedIngredient))
   }
 
-  def validateSketchyIngredients(sketchyIngredients: List[Ingredient]): Future[List[Ingredient]] = for {
-    validationJSON: Seq[String] <- Future.collect(sketchyIngredients.map(callValidator))
-    validatedIngredients: List[Ingredient] = validationJSON.map(decodeJSON(_)(validate))
+  def validateIngredients(invalidatedIngredients: List[InvalidatedIngredient]): Future[List[ValidatedIngredient]] = for {
+    validationJSON: Seq[String] <- Future.collect(invalidatedIngredients.map(callValidator))
+    validatedIngredients: List[ValidatedIngredient] = validationJSON.map(decodeJSON(_)(validateJSON))
       .toList
-      .zip(sketchyIngredients) // zip sketchy ingredients with boolean values
+      .zip(invalidatedIngredients) // zip sketchy ingredients with boolean values
       .filter { case (bool, _) => bool } // filter out ones that are invalid
-      .map { case (_, value) => value }
+      .map { case (_, ingredient) => convertInvalidatedIngredient(ingredient) }
   } yield validatedIngredients
 
-  def foodifyText(l: RawLists): Future[List[Ingredient]] = for {
+  def foodifyText(l: RawLists): Future[List[ValidatedIngredient]] = for {
     response: String <- callParser(l)
-    allIngredients: List[List[Ingredient]] = decodeJSON(response) { _.hcursor.get[List[List[Ingredient]]]("result")}
-    (normalIngredients: List[Ingredient], sketchyIngredients: List[Ingredient]) = split(allIngredients)
-    validatedIngredients: List[Ingredient] <- validateSketchyIngredients(sketchyIngredients)
-    ingredients = normalIngredients ::: validatedIngredients
+    allIngredients: List[List[InvalidatedIngredient]] = decodeJSON(response) { _.hcursor.get[List[List[InvalidatedIngredient]]]("result")}
+    (validatedIngredients, invalidatedIngredients) = split(allIngredients)
+    newlyValidatedIngredients <- validateIngredients(invalidatedIngredients)
+    ingredients: List[ValidatedIngredient] = validatedIngredients ::: newlyValidatedIngredients
     if ingredients.nonEmpty
   } yield ingredients
 
