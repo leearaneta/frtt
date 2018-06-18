@@ -9,7 +9,7 @@ scalacOptions += "-Ypartial-unification"
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "1.0.1",
   "org.jsoup" % "jsoup" % "1.8.3",
-  "org.seleniumhq.selenium" % "selenium-java" % "3.11.0",
+  "org.seleniumhq.selenium" % "selenium-java" % "3.12.0",
   "com.twitter" %% "util-collection" % "18.3.0",
   "com.twitter" %% "finagle-http" % "18.3.0",
   "com.github.finagle" %% "finch-core" % "0.17.0",
