@@ -8,6 +8,7 @@
       clearable
     />
     <el-button type="primary" :loading="loading" size="small" @click="handleClick">Huzzah</el-button>
+    <img src="https://thumbs.gfycat.com/DifficultGiftedBison-size_restricted.gif" alt="Sporty Burger" v-if="loading" />
   </div>
 </template>
 

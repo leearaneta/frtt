@@ -2,7 +2,8 @@ import data.{abbreviations, seleniumDomains, RawLists}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import org.openqa.selenium.By
-import org.openqa.selenium.remote.{DesiredCapabilities, RemoteWebDriver}
+import org.openqa.selenium.remote.RemoteWebDriver
+import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.support.ui.{ExpectedConditions, WebDriverWait}
 
 import scala.collection.JavaConverters._
@@ -12,7 +13,7 @@ object parsehtml {
   def loadHTMLWithJsoup(u: String): Document = Jsoup.connect(u).timeout(10000).get
 
   def loadHTMLWithSelenium(u: String, locatorName: String): Document = {
-    val driver = new RemoteWebDriver(new java.net.URL("http://172.18.0.2:4444/wd/hub"), DesiredCapabilities.firefox)
+    val driver = new RemoteWebDriver(new java.net.URL("http://172.18.0.2:4444/wd/hub"), new FirefoxOptions())
     driver.get(u)
     new WebDriverWait(driver, 15).until(
       ExpectedConditions.presenceOfElementLocated(By.className(locatorName))
