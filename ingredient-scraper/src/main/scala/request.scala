@@ -17,10 +17,10 @@ object request {
     val jsonString: String = ParserPayload("parse_all", l).asJson.toString
     val client: Service[Request, Response] = ClientBuilder()
       .stack(Http.client)
-      .hosts("tagger:4000")
+      .hosts("localhost:4000")
       .build()
     val request: Request = RequestBuilder()
-      .url("http://tagger:4000/jsonrpc")
+      .url("http://localhost:4000/jsonrpc")
       .buildPost(Buf.Utf8(jsonString))
     client(request).map(_.contentString)
   }
