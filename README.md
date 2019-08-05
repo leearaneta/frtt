@@ -10,4 +10,5 @@ This project uses [nytimes/ingredient-phrase-tagger](https://github.com/nytimes/
 # Build Instructions
 
 `docker compose build`
+
 `docker compose up`
