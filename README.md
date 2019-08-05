@@ -9,6 +9,8 @@ This project uses [nytimes/ingredient-phrase-tagger](https://github.com/nytimes/
 
 # Build Instructions
 
+`git clone git@github.com:leearaneta/frtt.git`
+
 `docker compose build`
 
 `docker compose up`
